@@ -34,20 +34,22 @@ def list_csv(index=None, all=False) -> List[str]:
 def dir_to(csv_file, write=False) -> str:
     '''путь до file.csv'''
     if write is True:
-        path = os.path.join(get_script_dir(), "filtred_csv")
-        if not os.path.exists(path):
-            os.mkdir(path)
+        path = os.path.join(get_script_dir(), "get_csv_here")
+
         return os.path.join(path, csv_file)
     if write is False:
-        return os.path.join(get_script_dir(), csv_file)
+        return os.path.join(get_script_dir(), "put_csv_here", csv_file)
 
 
 def init_note_list() -> None:
     '''определить список csv'''
 
     global csv_files
+    path = os.path.join(get_script_dir(), "put_csv_here")
+    if not os.path.exists(path):
+        os.mkdir(path)
 
-    files = os.listdir(get_script_dir())
+    files = os.listdir(path)
     for file in files:
         if file[-4:] == ".csv":
             csv_files.append(file)
@@ -75,8 +77,8 @@ def csv_reader(file_dir) -> List[Dict[str, str]]:
     return data
 
 
-def csv_writer(data) -> None:
-    new_file_dir = dir_to("result.csv", write=True)
+def csv_writer(data, file_name) -> None:
+    new_file_dir = dir_to(file_name, write=True)
     headers = ["begin", "end", "time interval", "login", "mac ab", "ULSK1",
                "BRAS ip", "start count", "alive count", "stop count",
                "incoming", "outcoming", "error_count", "code 0", "code 1011",
@@ -145,16 +147,25 @@ def ok_to_unixtime(ok):
 
 
 def filter(login=None, date_range=(None, None)) -> None:
+    csv_name = gen_new_csv_name()
     for i in range(len(list_csv(all=True))):
         query_result = get_csv_when(i, login=login, date_range=date_range)
         if query_result is None:
             continue
-        csv_writer(query_result)
+        csv_writer(query_result, csv_name)
         del query_result
     return None
+
+
+def gen_new_csv_name():
+    path = os.path.join(get_script_dir(), "get_csv_here")
+    if not os.path.exists(path):
+        os.mkdir(path)
+    files = os.listdir(path)
+    return f"result{len(files)+1}.csv"
 
 
 if __name__ == "__main__":
     init_note_list()
 
-    filter()
+    filter(date_range=("1587996714", "1587996744"))
