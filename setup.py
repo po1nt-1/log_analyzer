@@ -198,6 +198,7 @@ class MyQtApp(main.Ui_MainWindow, QtWidgets.QMainWindow):
                 self, "Предупреждение", "Файл пуст")
 
 
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication()
     qt_app = MyQtApp()
