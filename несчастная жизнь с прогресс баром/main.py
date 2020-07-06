@@ -336,6 +336,25 @@ class Ui_MainWindow(object):
 
         self.gridLayout_3.addLayout(self.horizontalLayout, 1, 0, 1, 1)
 
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.progressBar = QProgressBar(self.frame_4)
+        self.progressBar.setObjectName(u"progressBar")
+        self.progressBar.setMinimumSize(QSize(180, 28))
+        self.progressBar.setMaximumSize(QSize(180, 28))
+        self.progressBar.setFont(font3)
+        self.progressBar.setValue(0)
+        self.progressBar.setInvertedAppearance(False)
+
+        self.horizontalLayout_2.addWidget(self.progressBar)
+
+        self.horizontalSpacer_2 = QSpacerItem(32, 17, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
+
+
+        self.gridLayout_3.addLayout(self.horizontalLayout_2, 2, 0, 1, 1)
+
 
         self.formLayout.setWidget(0, QFormLayout.FieldRole, self.frame_4)
 

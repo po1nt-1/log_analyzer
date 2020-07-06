@@ -5,6 +5,11 @@ import os
 import sys
 from datetime import datetime
 from typing import Dict, List, Tuple
+from setup import outsider
+
+
+class Lil_error(Exception):
+    pass
 
 
 csv_files = list()
@@ -52,95 +57,109 @@ def dir_to(csv_file, write=False) -> str:
 
 def init_note_list() -> None:
     '''определить список csv'''
+    try:
+        global csv_files_folder
+        global csv_files
+        path = os.path.join(get_script_dir(), csv_files_folder)
 
-    global csv_files_folder
-    global csv_files
-    path = os.path.join(get_script_dir(), csv_files_folder)
+        files = os.listdir(path)
+        for file in files:
+            if file[-4:] == ".csv":
+                csv_files.append(file)
 
-    files = os.listdir(path)
-    for file in files:
-        if file[-4:] == ".csv":
-            csv_files.append(file)
+        if len(csv_files) == 0:
+            raise Lil_error("Error: folder does not contain '.csv' files.")
 
-    if len(csv_files) == 0:
-        raise Exception("Error: folder does not contain '.csv' files.")
+        file_info = dict()
+        for csv in csv_files:
+            try:
+                with open(dir_to(csv), 'r') as f:
+                    for _ in range(2):
+                        cur_dict = f.readline()
+                    first_begin = cur_dict.split(',')[0]
+                    file_info.update({csv: first_begin})
+            except FileNotFoundError as e:
+                raise Lil_error("Error: There is no such file or directory.")
+        csv_files = sorted(file_info, key=file_info.get)
 
-    file_info = dict()
-    for csv in csv_files:
-        try:
-            with open(dir_to(csv), 'r') as f:
-                for _ in range(2):
-                    cur_dict = f.readline()
-                first_begin = cur_dict.split(',')[0]
-                file_info.update({csv: first_begin})
-        except FileNotFoundError:
-            raise Exception("Error: There is no such file or directory.")
-    csv_files = sorted(file_info, key=file_info.get)
-
-    return None
+        return None
+    except Lil_error as e:
+        raise Lil_error(str(e))
 
 
 def csv_reader(file_dir) -> List[Dict[str, str]]:
     '''вернуть содержимое csv файла по его file_dir'''
-    global headers
+    try:
+        global headers
 
-    with open(file_dir, 'r') as f_check:
-        first_row = f_check.readline()
-    for key in headers:
-        if key not in first_row:
-            raise Exception("Error: Incorrect headers in csv.")
+        with open(file_dir, 'r') as f_check:
+            first_row = f_check.readline()
+        for key in headers:
+            if key not in first_row:
+                raise Lil_error("Error: Incorrect headers in csv.")
 
-    with open(file_dir, 'r') as csv_file:
-        reader = csv.DictReader(csv_file)
-        data = list()
-        for row in reader:
-            data.append(row)
-    return data
+        with open(file_dir, 'r') as csv_file:
+            reader = csv.DictReader(csv_file)
+            data = list()
+            for row in reader:
+                data.append(row)
+        return data
+    except Lil_error as e:
+        raise Lil_error(str(e))
 
 
 def csv_writer(data, file_name) -> None:
     global headers
 
-    new_file_dir = dir_to(file_name, write=True)
-    with open(new_file_dir, 'a', newline='') as csv_file:
-        writer = csv.DictWriter(csv_file, fieldnames=headers)
-        if os.path.getsize(new_file_dir) == 0:
-            writer.writeheader()
-        for row in data:
-            writer.writerow(row)
-    del data
-    return None
+    try:
+        new_file_dir = dir_to(file_name, write=True)
+        with open(new_file_dir, 'a', newline='') as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            if os.path.getsize(new_file_dir) == 0:
+                writer.writeheader()
+            for row in data:
+                writer.writerow(row)
+        del data
+        return None
+    except Lil_error as e:
+        raise Lil_error(str(e))
 
 
 def get_csv_when(index=None, login=None, date_range=[None, None]):
     '''вернуть содержимое одного csv по фильтрам'''
 
-    begin = date_range[0]
-    end = date_range[1]
+    try:
+        begin = date_range[0]
+        end = date_range[1]
 
-    csv = csv_reader(dir_to(list_csv(index)))
+        try:
+            csv = csv_reader(dir_to(list_csv(index)))
+        except lil_error as e:
+            raise lil_error(str(e))
 
-    filtred_csv = list()
-    if login is None:
-        for iter_dict in csv:
-            if iter_dict["begin"] >= begin and \
-                    iter_dict["end"] <= end:
-                filtred_csv.append(iter_dict)
+        filtred_csv = list()
+        if login is None:
+            for iter_dict in csv:
+                if iter_dict["begin"] >= begin and \
+                        iter_dict["end"] <= end:
+                    filtred_csv.append(iter_dict)
 
-    elif login is not None:
-        for iter_dict in csv:
-            if iter_dict["login"] == login:
-                filtred_csv.append(iter_dict)
+        elif login is not None:
+            for iter_dict in csv:
+                if iter_dict["login"] == login:
+                    filtred_csv.append(iter_dict)
 
-        filtred_csv_2 = list()
-        for iter_dict in filtred_csv:
-            if iter_dict["begin"] >= begin and \
-                    iter_dict["end"] <= end:
-                filtred_csv_2.append(iter_dict)
-        return filtred_csv_2
+            filtred_csv_2 = list()
+            for iter_dict in filtred_csv:
+                if iter_dict["begin"] >= begin and \
+                        iter_dict["end"] <= end:
+                    filtred_csv_2.append(iter_dict)
+            return filtred_csv_2
 
-    del csv
-    return filtred_csv
+        del csv
+        return filtred_csv
+    except Lil_error as e:
+        raise Lil_error(str(e))
 
 
 def ok_to_unix(ok):
@@ -155,57 +174,70 @@ def unixtime_to_ok(unixtime):
 
 
 def check_and_read_csv_single_file(file):
-    path = os.path.join(get_script_dir(), file)
-    if not os.access(path, os.F_OK):
-        raise Exception("Error: file does not exist.")
-    if not os.path.isfile(path):
-        raise Exception("Error: path does not point to file.")
-    if not os.access(path, os.R_OK):
-        raise Exception("Error: access to file is denied.")
-    if file[-4:] != ".csv":
-        raise Exception("Error: Incorrect file extension.")
+    try:
+        path = os.path.join(get_script_dir(), file)
+        if not os.access(path, os.F_OK):
+            raise Lil_error("Error: file does not exist.")
+        if not os.path.isfile(path):
+            raise Lil_error("Error: path does not point to file.")
+        if not os.access(path, os.R_OK):
+            raise Lil_error("Error: access to file is denied.")
+        if file[-4:] != ".csv":
+            raise Lil_error("Error: Incorrect file extension.")
 
-    return csv_reader(os.path.join(get_script_dir(), file))
+        try:
+            return csv_reader(os.path.join(get_script_dir(), file))
+        except lil_error as e:
+            raise lil_error(str(e))
+    except Lil_error as e:
+        raise Lil_error(str(e))
 
 
 def show_page_from_csv(path_to_file, page_number):
 
-    csv = check_and_read_csv_single_file(path_to_file)
-
-    page_size = 100
-    if len(csv) / 100 > 1:
-        if len(csv) % page_size == 0:
-            pages_total = len(csv) // page_size
-        else:
-            pages_total = len(csv) // page_size + 1
-    else:
-        pages_total = 1
-
-    if page_number < 1:
-        raise Exception("Error1: Incorrect page number")
-    if pages_total == 1 and page_number > 1:
-        raise Exception("Error2: Incorrect page number")
-    if page_number > pages_total:
-        raise Exception("Error3: Incorrect page number")
-
-    page_begin = page_size * page_number - page_size
-    page_end = page_size * page_number
-
-    data = list()
     try:
-        for iter_dict in range(page_begin, page_end):
-            data.append(csv[iter_dict])
-    except IndexError:
-        pass
+        csv = check_and_read_csv_single_file(path_to_file)
 
-    return (data, pages_total)
+        page_size = 100
+        if len(csv) / 100 > 1:
+            if len(csv) % page_size == 0:
+                pages_total = len(csv) // page_size
+            else:
+                pages_total = len(csv) // page_size + 1
+        else:
+            pages_total = 1
+
+        if page_number < 1:
+            raise Lil_error("Error1: Incorrect page number")
+        if pages_total == 1 and page_number > 1:
+            raise Lil_error("Error2: Incorrect page number")
+        if page_number > pages_total:
+            raise Lil_error("Error3: Incorrect page number")
+
+        page_begin = page_size * page_number - page_size
+        page_end = page_size * page_number
+
+        data = list()
+        try:
+            for iter_dict in range(page_begin, page_end):
+                data.append(csv[iter_dict])
+        except IndexError:
+            pass
+
+        return (data, pages_total)
+    except Lil_error as e:
+        raise Lil_error(str(e))
 
 
 def filter(login=None, date_range=[None, None]) -> None:
     csv_name = gen_new_csv_name()
-    for i in range(len(list_csv(all=True))):
+
+    maax = len(list_csv(all=True))
+    for i in range(maax):
         data = get_csv_when(i, login=login, date_range=date_range)
         csv_writer(data, csv_name)
+
+        outsider(int((i + 1) * (100 / maax)))
         del data
     return None
 
@@ -222,15 +254,18 @@ def gen_new_csv_name():
 
 
 def check_csv_files_folder(folder):
-    global csv_files_folder
-    path = os.path.join(get_script_dir(), folder)
-    if not os.access(path, os.F_OK):
-        raise Exception("Error: folder does not exist.")
-    if not os.path.isdir(path):
-        raise Exception("Error: path does not point to folder.")
-    if not os.access(path, os.R_OK):
-        raise Exception("Error: access to folder is denied.")
-    if len(os.listdir(path)) == 0:
-        raise Exception("Error: folder is empty.")
+    try:
+        global csv_files_folder
+        path = os.path.join(get_script_dir(), folder)
+        if not os.access(path, os.F_OK):
+            raise Lil_error("Error: folder does not exist.")
+        if not os.path.isdir(path):
+            raise Lil_error("Error: path does not point to folder.")
+        if not os.access(path, os.R_OK):
+            raise Lil_error("Error: access to folder is denied.")
+        if len(os.listdir(path)) == 0:
+            raise Lil_error("Error: folder is empty.")
 
-    csv_files_folder = folder
+        csv_files_folder = folder
+    except Lil_error as e:
+        raise Lil_error(str(e))
