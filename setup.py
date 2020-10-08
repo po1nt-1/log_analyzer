@@ -1,10 +1,9 @@
+from PySide2 import QtCore, QtGui
+from PySide2.QtWidgets import (QApplication, QFileDialog, QMainWindow,
+                               QMessageBox, QTableWidgetItem)
+
 import backend
 import main
-from PySide2 import QtCore, QtGui
-from PySide2.QtCore import QThread, Signal
-from PySide2.QtWidgets import QDialog, QVBoxLayout, QLabel, \
-    QPushButton, QApplication, QMainWindow, QMessageBox, \
-    QFileDialog, QTableWidgetItem, QProgressBar
 
 
 class Lil_error(Exception):
